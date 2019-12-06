@@ -10,7 +10,7 @@ const { WEB, WEEX, MINIAPP, KRAKEN, WECHAT_MINIPROGRAM } = require('./constants'
 
 const asyncTask = [];
 
-module.exports = ({ chainWebpack, registerConfig, context, onHook }, options = {}) => {
+module.exports = ({ onGetWebpackConfig, registerConfig, context, onHook }, options = {}) => {
   const { targets = [] } = options;
   let devUrl = '';
   let devCompletedArr = [];
@@ -32,13 +32,11 @@ module.exports = ({ chainWebpack, registerConfig, context, onHook }, options = {
   });
 
   selfDevTargets.forEach(target => {
-    const getBase = require(`./config/${target}/getBase`);
-    const setDev = require(`./config/${target}/setDev`);
+    const [getBase, setDev ] = getConfig(target);
+    registerConfig(target, getBase(context, target));
 
-    registerConfig(target, getBase(context));
-
-    chainWebpack((config) => {
-      setDev(config.getConfig(target), context);
+    onGetWebpackConfig(target, (config) => {
+      setDev(config, context);
     });
   });
 
@@ -59,9 +57,11 @@ module.exports = ({ chainWebpack, registerConfig, context, onHook }, options = {
     }
   });
 
-  Promise.all(asyncTask).then(() => {
-    devCompileLog();
-  });
+  if (asyncTask.length) {
+    Promise.all(asyncTask).then(() => {
+      devCompileLog();
+    });
+  }
 
   onHook('after.devCompile', async (args) => {
     devUrl = args.url;
@@ -89,6 +89,9 @@ module.exports = ({ chainWebpack, registerConfig, context, onHook }, options = {
       return;
     }
 
+    // hide log in mpa
+    const raxMpa = getValue('raxMpa');
+    if (raxMpa) return;
     console.log(chalk.green('Rax development server has been started:'));
     console.log();
 
@@ -140,5 +143,13 @@ function addMpPlatform(target, originalConfig = {}) {
       break;
     default:
       break;
+  }
+}
+
+function getConfig(target) {
+  if ([WEB, KRAKEN, WEEX].indexOf(target) > -1) {
+    return [require(`./config/${target}/getBase`), require(`./config/${target}/setDev`)];
+  } else {
+    return [require(`./config/miniapp/runtime/getBase`), require(`./config/miniapp/runtime/getBase`)]
   }
 }

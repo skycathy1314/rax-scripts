@@ -3,7 +3,7 @@ const setEntry = require('../../setEntry');
 const setUserConfig = require('../../user/setConfig');
 
 module.exports = (context, target) => {
-  const config = getWebpackBase(context);
+  const config = getWebpackBase(context, target);
   setEntry(config, context, target);
 
   config.output.filename('web/[name].js');

@@ -12,11 +12,11 @@ const babelConfig = getBabelConfig({
   styleSheet: true,
 });
 
-module.exports = (context) => {
+module.exports = (context, target) => {
   const { rootDir, command } = context;
   const config = new Chain();
-
-  config.target('web');
+  
+  config.target(target);
   config.context(rootDir);
 
   setBabelAlias(config);
